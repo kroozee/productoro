@@ -1,0 +1,9 @@
+.navbar .navbar-start {
+    text-align: center;
+    display: block;
+    width: 100%;
+  }
+  
+  .navbar .navbar-start > .navbar-item, .navbar-link {
+    display: inline-block;
+  }
