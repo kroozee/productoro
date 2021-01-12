@@ -10,6 +10,7 @@
     "@reduxjs/toolkit": "^1.5.0",
     "bulma": "^0.9.1",
     "connected-react-router": "6.8.0",
+    "dayjs": "^1.10.3",
     "history": "^4.10.1",
     "immutable": "^4.0.0-rc.12",
     "node-sass": "^4.14.1",
