@@ -70,8 +70,16 @@
     </Target>
 
     <ItemGroup>
+        <PackageReference Include="Dapper" Version="2.0.78" />
+        <PackageReference Include="FluentMigrator" Version="3.2.11" />
+        <PackageReference Include="FluentMigrator.Runner" Version="3.2.11" />
+        <PackageReference Include="FluentMigrator.Runner.SQLite" Version="3.2.11" />
         <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="5.0.1" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="5.0.1" />
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
         <PackageReference Include="Optional" Version="4.0.0" />
+        <PackageReference Include="System.Reactive" Version="5.0.0" />
+        <PackageReference Include="System.Reactive.Linq" Version="5.0.0" />
     </ItemGroup>
 
 </Project>
