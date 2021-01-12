@@ -2,7 +2,7 @@ using System;
 
 namespace Productoro.Extensions
 {
-    public static class LazyExtensions
+    internal static class LazyExtensions
     {
         public static Lazy<TResult> Select<TValue, TResult>(this Lazy<TValue> @this, Func<TValue, TResult> projection)
         {

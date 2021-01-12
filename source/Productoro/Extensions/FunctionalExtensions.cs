@@ -2,7 +2,7 @@ using System;
 
 namespace Productoro.Extensions
 {
-    public static class FunctionalExtensions
+    internal static class FunctionalExtensions
     {
         public static TResult PipeTo<TValue, TResult>(this TValue @this, Func<TValue, TResult> function)
         {
