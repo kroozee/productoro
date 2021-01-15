@@ -15,7 +15,25 @@ namespace Productoro.Models.Events
             aggregate.Handle(this);
     }
 
+    public sealed record ProjectArchived : IDomainEvent<IProjectAggregate, Project>
+    {
+        public void Accept(IProjectAggregate aggregate) =>
+            aggregate.Handle(this);
+    }
+
     public sealed record TaskCreated(TaskId Id, TaskName Name) : IDomainEvent<ITaskAggregate, Task>
+    {
+        public void Accept(ITaskAggregate aggregate) =>
+            aggregate.Handle(this);
+    }
+
+    public sealed record SessionLogged(Session Session) : IDomainEvent<ITaskAggregate, Task>
+    {
+        public void Accept(ITaskAggregate aggregate) =>
+            aggregate.Handle(this);
+    }
+
+    public sealed record AdjustmentMade(Adjustment Adjustment) : IDomainEvent<ITaskAggregate, Task>
     {
         public void Accept(ITaskAggregate aggregate) =>
             aggregate.Handle(this);
@@ -26,7 +44,6 @@ namespace Productoro.Models.Events
         public void Accept(ITaskAggregate aggregate) =>
             aggregate.Handle(this);
     }
-
 
     public sealed record TaskUncompleted() : IDomainEvent<ITaskAggregate, Task>
     {

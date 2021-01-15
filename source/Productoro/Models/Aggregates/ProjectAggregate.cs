@@ -11,6 +11,7 @@ namespace Productoro.Models.Aggregates
     public interface IProjectAggregate : IAggregate<Project>
     {
         void Handle(ProjectCreated @event);
+        void Handle(ProjectArchived @event);
     }
 
     internal sealed class ProjectAggregate : IProjectAggregate, IObservable<(AggregateId, IDomainEvent<IProjectAggregate, Project>)>
@@ -28,6 +29,12 @@ namespace Productoro.Models.Aggregates
         public void Handle(ProjectCreated @event)
         {
             CurrentState = Option.Some(new Project(@event.Id, @event.Name, ImmutableArray<Task>.Empty, false));
+            subject.OnNext((Id, @event));
+        }
+
+        public void Handle(ProjectArchived @event)
+        {
+            CurrentState = CurrentState.Map(state => new Project(state.Id, state.Name, state.Tasks, true));
             subject.OnNext((Id, @event));
         }
 
