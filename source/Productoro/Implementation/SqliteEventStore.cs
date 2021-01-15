@@ -9,10 +9,14 @@ namespace Productoro.Implementation
 {
     internal sealed class SqliteEventStore : IEventStore
     {
+        private readonly ITimeProvider time;
         private readonly IDatabase database;
 
-        public SqliteEventStore(IDatabase database)
+        public SqliteEventStore(
+            ITimeProvider time,
+            IDatabase database)
         {
+            this.time = time ?? throw new ArgumentNullException(nameof(time));
             this.database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
@@ -85,7 +89,7 @@ namespace Productoro.Implementation
                 VALUES (@Id, @AggregateType, @AggregateId, @Type, @Body, @Timestamp);
             ";
 
-            var timestamp = DateTimeOffset.Now; // TODO extract dependency.
+            var timestamp = time.Now();
 
             var parameters = new
             {
