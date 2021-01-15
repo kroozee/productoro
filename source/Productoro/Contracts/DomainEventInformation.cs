@@ -3,17 +3,17 @@ using System.Runtime.Serialization;
 
 namespace Productoro.Contracts
 {
-    [DataContract(Namespace = Resources.ContractNamespace, Name = "DomainEvent")]
-    public abstract class DomainEvent : IExtensibleDataObject
+    [DataContract(Namespace = Resources.ContractNamespace, Name = "DomainEventInformation")]
+    public sealed class DomainEventInformation : IExtensibleDataObject
     {
         [DataMember(Name = "Id", Order = 0)]
         public Guid Id { get; set; }
 
-        [DataMember(Name = "Aggregate", Order = 1)]
-        public string Aggregate { get; set; } = null!;
+        [DataMember(Name = "AggregateType", Order = 1)]
+        public string AggregateType { get; set; } = null!;
 
-        [DataMember(Name = "InstanceId", Order = 2)]
-        public Guid InstanceId { get; set; }
+        [DataMember(Name = "AggregateId", Order = 2)]
+        public Guid AggregateId { get; set; }
 
         [DataMember(Name = "Type", Order = 3)]
         public string Type { get; set; } = null!;

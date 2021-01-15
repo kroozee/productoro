@@ -1,17 +1,14 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Productoro.Models.Events;
-
+using DomainEventContract = Productoro.Contracts.DomainEventInformation;
 namespace Productoro
 {
-    internal sealed record Aggregate(string Value);
-    internal sealed record InstanceId(Guid Value);
-
     internal interface IEventStore
     {
-        Task<IReadOnlyCollection<DomainEvent>> GetEventsAsync();
-        Task<IReadOnlyCollection<DomainEvent>> GetEventsAsync(Aggregate aggregate);
-        Task<IReadOnlyCollection<DomainEvent>> GetEventsAsync(Aggregate aggregate, InstanceId instance);
+        ValueTask<IEnumerable<DomainEventContract>> GetEventsAsync();
+        ValueTask<IEnumerable<DomainEventContract>> GetEventsAsync(AggregateType aggregateType);
+        ValueTask<IEnumerable<DomainEventContract>> GetEventsAsync(AggregateType aggregateType, AggregateId aggregateId);
+        ValueTask WriteAsync(DomainEventContract eventInformation);
     }
 }

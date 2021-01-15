@@ -1,0 +1,87 @@
+@startuml Productoro
+
+package Frontend <<Folder>> {
+    class Project {
+        id: string
+        name: string
+        tasks: Task[]
+    }
+
+    class Task {
+        id: string
+        name: string
+        duration: duration
+        isCompleted: boolean
+    }
+
+    class Session {
+        taskId: string
+        start: timestamp
+        end: timestamp
+    }
+
+    class WorkDay {
+        start: timestamp
+        end: timestamp
+        projects: Project[]
+    }
+
+    Project *-- Task
+    WorkDay *-- Project
+}
+
+package Backend <<Frame>> {
+    interface IProjectClient {
+        GetProjectsAsync(): IAsyncEnumerable<Project>
+        GetProjectAsync(projectId: ProjectId): Task<Project>
+    }
+
+    interface IArchiveClient {
+        ArchiveProjectAsync(projectId: ProjectId): Task<Project>
+        GetArchiveAsync(): IAsyncEnumerable<Project>
+    }
+
+    interface ISessionClient {
+        AddSessionAsync(session: Session): Task<Session>
+    }
+
+    interface IWorkDayClient {
+        GetWorkDayAsync(dateStarted: date): Task<WorkDay>
+        GetWorkDaysAsync(start: timestamp, end: timestamp)
+    }
+}
+
+package Database <<Database>> {
+    entity "Event" {
+        id: guid
+        aggregate: string
+        type: string
+        body: string
+        timestamp: timestamp
+    }
+
+    entity "Session" as dbSession {
+        id: guid
+        taskId: guid <<FK>>
+        startTime: timestamp
+        stopTime: timestamp
+    }
+
+    entity "Task" as dbTask {
+        id: guid
+        projectId: guid <<FK>>
+        name: string
+        isCompleted: boolean
+    }
+
+    entity "Project" as dbProject {
+        id: guid
+        name: string
+        isArchived: boolean
+    }
+
+    dbProject ||--|{ dbTask
+    dbTask ||--o{ dbSession
+}
+
+@enduml
