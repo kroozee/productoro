@@ -1,16 +1,15 @@
 using System;
 using System.Data;
 using System.Threading.Tasks;
-using Productoro;
 
 namespace Productoro.Implementation
 {
     internal sealed class Database : IDatabase
     {
-        private readonly IDatabaseConnectionFactory _connectionFactory;
+        private readonly IDatabaseConnectionFactory connectionFactory;
 
         public Database(IDatabaseConnectionFactory connectionFactory) =>
-            _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+            this.connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
 
         public ValueTask<T> UsingConnectionAsync<T>(Func<IDbConnection, IDbTransaction, Task<T>> func)
         {
@@ -23,7 +22,7 @@ namespace Productoro.Implementation
 
             async ValueTask<T> InvokeAsync()
             {
-                using var connection = _connectionFactory.Create();
+                using var connection = connectionFactory.Create();
                 connection.Open();
                 using var transaction = connection.BeginTransaction();
                 var result = await func(connection, transaction).ConfigureAwait(false);

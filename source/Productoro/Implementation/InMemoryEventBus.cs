@@ -11,13 +11,13 @@ namespace Productoro.Implementation
     internal sealed class InMemoryEventBus : IEventBus
     {
         public static IEventBus Instance { get; } = new InMemoryEventBus();
-        private readonly ConcurrentDictionary<Type, object> _subscriptions;
+        private readonly ConcurrentDictionary<Type, object> subscriptions;
 
         internal InMemoryEventBus() =>
-            _subscriptions = new ConcurrentDictionary<Type, object>();
+            subscriptions = new ConcurrentDictionary<Type, object>();
 
         public ValueTask PostAsync<TEvent>(TEvent @event) =>
-             _subscriptions
+             subscriptions
                 .GetValueOrNone(typeof(TEvent))
                 .FlatMap(value => (value as EventHandlers<TEvent>).AsOption())
                 .Match(
@@ -25,7 +25,7 @@ namespace Productoro.Implementation
                     none: () => new ValueTask());
 
         public IDisposable Subscribe<TEvent>(Func<TEvent, ValueTask> handler) =>
-            _subscriptions
+            subscriptions
                 .GetOrAdd(typeof(TEvent), _ => new EventHandlers<TEvent>())
                 .PipeTo(handlers => (handlers as EventHandlers<TEvent>).AsOption())
                 .Match(

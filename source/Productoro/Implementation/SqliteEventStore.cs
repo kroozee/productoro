@@ -2,88 +2,105 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
-using Newtonsoft.Json;
-using Productoro;
-using Productoro.Models;
-using Productoro.Extensions;
-using DomainEventContract = Productoro.Contracts.DomainEvent;
-using System.Linq;
 using Productoro.Models.Events;
+using DomainEventContract = Productoro.Contracts.DomainEventInformation;
 
 namespace Productoro.Implementation
 {
-
     internal sealed class SqliteEventStore : IEventStore
     {
-        private readonly IDatabase _database;
+        private readonly IDatabase database;
 
         public SqliteEventStore(IDatabase database)
         {
-            _database = database ?? throw new ArgumentNullException(nameof(database));
+            this.database = database ?? throw new ArgumentNullException(nameof(database));
         }
 
-        public async Task<IReadOnlyCollection<DomainEvent>> GetEventsAsync()
+        public ValueTask<IEnumerable<DomainEventContract>> GetEventsAsync()
         {
-            const string sql = "SELECT * FROM main.DomainEvents";
+            const string sql = @"
+                SELECT *
+                FROM main.DomainEvents
+            ";
 
-            var events = await _database.UsingConnectionAsync((connection, transaction) =>
+            return database.UsingConnectionAsync((connection, transaction) =>
                connection.QueryAsync<DomainEventContract>(sql, transaction: transaction));
-
-            return DeserializeEvents(events);
         }
 
-        public async Task<IReadOnlyCollection<DomainEvent>> GetEventsAsync(Aggregate aggregate)
+        public ValueTask<IEnumerable<DomainEventContract>> GetEventsAsync(AggregateType aggregateType)
         {
-            const string sql = @"
-                SELECT *
-                FROM main.DomainEvents
-                WHERE Aggregate = @Aggregate
-            ";
-
-            var parameters = new
+            if (aggregateType is null)
             {
-                Aggregate = aggregate.Value
-            };
-
-            var events = await _database.UsingConnectionAsync((connection, transaction) =>
-               connection.QueryAsync<DomainEventContract>(sql, parameters, transaction));
-
-            return DeserializeEvents(events);
-        }
-
-        public async Task<IReadOnlyCollection<DomainEvent>> GetEventsAsync(Aggregate aggregate, InstanceId instance)
-        {
-            const string sql = @"
-                SELECT *
-                FROM main.DomainEvents
-                WHERE Aggregate = @Aggregate
-                    AND InstanceId = @InstanceId
-            ";
-
-            var parameters = new
-            {
-                Aggregate = aggregate.Value,
-                InstanceId = instance.Value // TODO: .ToString() ? Depends on what FluentMigrator does...
-            };
-
-            var events = await _database.UsingConnectionAsync((connection, transaction) =>
-               connection.QueryAsync<DomainEventContract>(sql, parameters, transaction));
-
-            return DeserializeEvents(events);
-        }
-
-        private static IReadOnlyCollection<DomainEvent> DeserializeEvents(IEnumerable<DomainEventContract> events)
-        {
-            return events
-                .Select(Deserialize)
-                .ToReadOnlyCollection();
-
-            static DomainEvent Deserialize(DomainEventContract @event)
-            {
-                var eventType = Type.GetType(@event.Type) ?? throw new InvalidOperationException($"Could not deserialize unknown domain event type '{@event.Type}'.");
-                var body = JsonConvert.DeserializeObject(@event.Body, eventType) ?? throw new InvalidOperationException($"Failed to deserialize event because it did not have a body (event type: '{@event.Type}').");
-                return @event.ToModel(body);
+                throw new ArgumentNullException(nameof(aggregateType));
             }
+
+            const string sql = @"
+                SELECT *
+                FROM main.DomainEvents
+                WHERE AggregateType = @AggregateType
+            ";
+
+            var parameters = new
+            {
+                AggregateType = aggregateType.Value
+            };
+
+            return database.UsingConnectionAsync((connection, transaction) =>
+               connection.QueryAsync<DomainEventContract>(sql, parameters, transaction));
+        }
+
+        public ValueTask<IEnumerable<DomainEventContract>> GetEventsAsync(AggregateType aggregateType, AggregateId aggregateId)
+        {
+            if (aggregateType is null)
+            {
+                throw new ArgumentNullException(nameof(aggregateType));
+            }
+
+            if (aggregateId is null)
+            {
+                throw new ArgumentNullException(nameof(aggregateId));
+            }
+
+            const string sql = @"
+                SELECT *
+                FROM main.DomainEvents
+                WHERE AggregateType = @AggregateType
+                    AND AggregateId = @AggregateId
+            ";
+
+            var parameters = new
+            {
+                AggregateType = aggregateType.Value,
+                AggregateId = aggregateId.Value // TODO: .ToString() ? Depends on what FluentMigrator does...
+            };
+
+            return database.UsingConnectionAsync((connection, transaction) =>
+               connection.QueryAsync<DomainEventContract>(sql, parameters, transaction));
+        }
+
+        public ValueTask WriteAsync(DomainEventContract @event)
+        {
+            const string sql = @"
+                REPLACE INTO main.DomainEvents(Id, AggregateType, AggregateId, Type, Body, Timestamp)
+                VALUES (@Id, @AggregateType, @AggregateId, @Type, @Body, @Timestamp);
+            ";
+
+            var timestamp = DateTimeOffset.Now; // TODO extract dependency.
+
+            var parameters = new
+            {
+                Id = @event.Id, // TODO: ToString ? Depends on what fluentmigrator does...
+                AggregateType = @event.AggregateType,
+                AggregateId = @event.AggregateId,
+                Type = @event.GetType().FullName,
+                Timestamp = timestamp
+            };
+
+            var executeTask = database
+                .UsingConnectionAsync((connection, transaction) => connection.ExecuteAsync(sql, parameters, transaction))
+                .AsTask();
+
+            return new ValueTask(executeTask);
         }
     }
 }

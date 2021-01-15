@@ -7,15 +7,15 @@ namespace Productoro.Implementation
 {
     internal sealed class AsyncSemaphore
     {
-        private readonly Queue<TaskCompletionSource<Nothing>> _waiters;
-        private readonly object _gate;
-        private int _currentCount;
+        private readonly Queue<TaskCompletionSource<Nothing>> waiters;
+        private readonly object padlock;
+        private int currentCount;
 
         public AsyncSemaphore(int initialCount = 1)
         {
-            _waiters = new Queue<TaskCompletionSource<Nothing>>();
-            _gate = new object();
-            _currentCount = initialCount;
+            this.waiters = new Queue<TaskCompletionSource<Nothing>>();
+            this.padlock = new object();
+            this.currentCount = initialCount;
         }
 
         public ValueTask<Releaser> LockAsync()
@@ -72,17 +72,17 @@ namespace Productoro.Implementation
 
         private ValueTask WaitAsync()
         {
-            lock (_gate)
+            lock (padlock)
             {
-                if (_currentCount > 0)
+                if (currentCount > 0)
                 {
-                    _currentCount -= 1;
+                    currentCount -= 1;
                     return new ValueTask();
                 }
                 else
                 {
                     var waiter = new TaskCompletionSource<Nothing>();
-                    _waiters.Enqueue(waiter);
+                    waiters.Enqueue(waiter);
                     return new ValueTask(waiter.Task);
                 }
             }
@@ -91,15 +91,15 @@ namespace Productoro.Implementation
         private void Release()
         {
             TaskCompletionSource<Nothing>? toRelease = null;
-            lock (_gate)
+            lock (padlock)
             {
-                if (_waiters.Count > 0)
+                if (waiters.Count > 0)
                 {
-                    toRelease = _waiters.Dequeue();
+                    toRelease = waiters.Dequeue();
                 }
                 else
                 {
-                    _currentCount += 1;
+                    currentCount += 1;
                 }
             }
             toRelease?.SetResult(Nothing.Default);
@@ -107,13 +107,13 @@ namespace Productoro.Implementation
 
         public readonly struct Releaser : IDisposable
         {
-            private readonly AsyncSemaphore _instance;
+            private readonly AsyncSemaphore instance;
 
             public Releaser(AsyncSemaphore instance) =>
-                _instance = instance ?? throw new ArgumentNullException(nameof(instance));
+                this.instance = instance ?? throw new ArgumentNullException(nameof(instance));
 
             public void Dispose() =>
-                _instance.Release();
+                instance.Release();
         }
     }
 }
