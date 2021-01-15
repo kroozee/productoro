@@ -8,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Optional;
+using Microsoft.Extensions.DependencyInjection;
+using FluentMigrator.Runner;
 
 namespace Productoro
 {
@@ -59,7 +61,8 @@ namespace Productoro
                 })
                 .ConfigureAppConfiguration((hostingContext, config) =>
                     config.AddConfiguration(configuration))
-                .ConfigureWebHostDefaults(webBuilder => {
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
                     var port = configuration["Host:Port"];
                     webBuilder
                         .UseContentRoot(ApplicationPath.Directory)
@@ -68,7 +71,11 @@ namespace Productoro
                         .UseStartup<Startup>();
                 })
                 .Build();
-            
+
+            using var scope = host.Services.CreateScope();
+            var runner = host.Services.GetRequiredService<IMigrationRunner>();
+            runner.MigrateUp();
+
             using var cancellationTokenSource = new CancellationTokenSource();
             var runTask = host.RunAsync(cancellationTokenSource.Token);
 
